@@ -1,6 +1,9 @@
 """
     강의 내용 참고하여 작성
 """
+import numpy as np
+import matplotlib.pyplot as plt
+from PIL import Image, ImageDraw, ImageFont
 
 def parse_hyperparam_config(path):
     file = open(path, 'r')
@@ -72,3 +75,40 @@ def get_hyperparam(cfg):
                     'ignore_cls': ignore_cls}
         else:
             continue
+
+
+def xywh2xyxy_np(x):
+    """
+    Input value
+    1. x[...,0] = center_x
+    2. x[...,1] = center_y
+    3. x[...,2] = weight
+    4. x[...,3] = height
+
+    Output Value
+    minx, miny, maxx, maxy
+    """
+    y = np.zeros_like(x)
+    y[..., 0] = x[..., 0] - x[..., 2] / 2  # minx
+    y[..., 1] = x[..., 1] - x[..., 3] / 2  # miny
+    y[..., 2] = x[..., 0] + x[..., 2] / 2  # maxx
+    y[..., 3] = x[..., 1] + x[..., 3] / 2  # maxy
+
+    return y
+
+
+def draw_box(img):
+    img = img * 255
+
+    if img.shape[0] == 3:
+        img_data = np.array(np.transpose(img, (1, 2, 0)), dtype=np.uint8)
+        img_data = Image.fromarray(img_data)
+    # elif img.ndim == 2:
+    #     img_data = np.array(img, dtype=np.uint8)
+    #     img_data = Image.fromarray(img_data, 'L')
+
+    draw = ImageDraw.Draw(img_data)
+    fontsize = 15
+    # font = ImageFont.truetype("./arial.ttf", fontsize)
+    plt.imshow(img_data)
+    plt.show()

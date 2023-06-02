@@ -8,7 +8,6 @@ from PIL import Image
 import numpy as np
 from utils.tools import *
 
-
 class YoloData(Dataset):
     annotation_dir = ""
     file_dir = ""
@@ -54,6 +53,7 @@ class YoloData(Dataset):
         self.img_data = img_data
 
     def __getitem__(self, index):
+
         img_path = self.file_dir + self.img_data[index]
 
         with open(img_path, 'rb') as f:

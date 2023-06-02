@@ -1,7 +1,10 @@
 import torch
 import argparse
 import sys
-
+from utils import tools
+from dataloader.yolodata import YoloData
+from dataloader.data_transforms import get_transformations
+from torch.utils.data.dataloader import DataLoader
 
 def parse_args():
     parser = argparse.ArgumentParser(description="YOLOV3_PYTORCH argments")
@@ -20,9 +23,25 @@ def parse_args():
     return args
 
 
-def train():
+def train(cfg_param=None, using_gpus=None):
     print("train")
+    my_transform = get_transformations(cfg_param=cfg_param, is_train=True)
+    # data loader
+    train_data = YoloData(is_train=True,
+                          transform=my_transform,
+                          cfg_param=cfg_param)
+    train_loader = DataLoader(train_data,
+                              batch_size=cfg_param['batch'],
+                              num_workers=0,
+                              pin_memory=True,
+                              drop_last=True,
+                              shuffle=True,
+                              )
+    for i, batch in enumerate(train_loader):
+        img, targets, anno_path = batch
+        print("iter {}, img {}, targets {}, anno_path {}".format(i, img.shape, targets.shape, anno_path))
 
+        tools.draw_box(img[0].detach().cpu())
 
 def eval():
     print("eval")
@@ -38,9 +57,13 @@ if __name__ == "__main__":
     args = parse_args()
 
     # cfg parser
+    cfg_data = tools.parse_hyperparam_config(args.cfg)
+    cfg_info = tools.get_hyperparam(cfg_data)
 
     if args.mode == "train":
-        train()
+
+        train(cfg_param=cfg_info)
+
     elif args.mode == "eval":
         eval()
     else:
