@@ -45,10 +45,9 @@ def train(cfg_param=None, using_gpus=None):
     #
     #     tools.draw_box(img[0].detach().cpu())
     model = DarkNet53(args.cfg, cfg_param, is_train=True)
-    for name, param in model.named_parameters():
-        print(f"name {name} param {param.shape}")
     # training model
     model.train()
+    model.initialize_weight()
     for i, batch in enumerate(train_loader):
         img, targets, anno_path = batch
 

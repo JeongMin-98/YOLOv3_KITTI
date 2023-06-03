@@ -100,10 +100,10 @@ class DarkNet53(nn.Module):
                 modules = add_conv2d_layer(layer_index, modules, info, in_channels[-1], True)
                 in_channels.append(filters)
             elif info['type'] == 'shortcut':
-                modules.add_module('layer_' + str(layer_index) + '_shortcut', nn.Sequential())
+                modules.add_module('layer_' + str(layer_index) + '_shortcut', nn.Identity())
                 in_channels.append(in_channels[-1])
             elif info['type'] == 'route':
-                modules.add_module('layer_' + str(layer_index) + '_route', nn.Sequential())
+                modules.add_module('layer_' + str(layer_index) + '_route', nn.Identity())
                 layers = [int(y) for y in info["layers"].split(",")]
                 if len(layers) == 1:
                     in_channels.append(in_channels[layers[0]])
@@ -123,11 +123,24 @@ class DarkNet53(nn.Module):
 
         return module_list
 
+    def initialize_weight(self):
+        """ initialize weight """
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_uniform_(m.weight)
+
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
+                elif isinstance(m, nn.BatchNorm2d):
+                    nn.init.constant_(m.weight, 1)
+                    nn.init.constant_(m.bias, 0)
+                elif isinstance(m, nn.Linear):
+                    nn.init.kaiming_uniform_(m.weight)
+                    nn.init.constant_(m.bias, 0)
     def forward(self, x):
         yolo_result = []
         layer_result = []
         for idx, (name, layer) in enumerate(zip(self.module_cfg, self.module_list)):
-            print(f'idx {idx} name {name["type"]}')
             if name['type'] == "convolutional":
                 x = layer(x)
                 layer_result.append(x)
@@ -147,7 +160,5 @@ class DarkNet53(nn.Module):
                 x = torch.cat(features, dim=1)
                 layer_result.append(x)
 
-            if len(yolo_result):
-                print(f'YOLO : {yolo_result[-1].shape}')
-            print(f'LAYER : {layer_result[-1].shape}')
+
         return yolo_result
