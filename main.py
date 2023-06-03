@@ -6,6 +6,7 @@ from dataloader.yolodata import YoloData
 from dataloader.data_transforms import get_transformations
 from torch.utils.data.dataloader import DataLoader
 from model.yolov3 import *
+from train.trainer import Trainer
 
 
 def parse_args():
@@ -48,13 +49,9 @@ def train(cfg_param=None, using_gpus=None):
     # training model
     model.train()
     model.initialize_weight()
-    for i, batch in enumerate(train_loader):
-        img, targets, anno_path = batch
 
-        output = model(img)
-        print("output len : {}, shape {} {} {}".format(len(output), output[0].shape, output[1].shape, output[2].shape))
-        sys.exit(1)
-
+    trainer = Trainer(model=model, train_loader=train_loader, eval_loader=None, params=cfg_param)
+    trainer.run()
 
 def eval():
     print("eval")
