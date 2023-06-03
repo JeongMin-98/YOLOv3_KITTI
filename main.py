@@ -5,6 +5,8 @@ from utils import tools
 from dataloader.yolodata import YoloData
 from dataloader.data_transforms import get_transformations
 from torch.utils.data.dataloader import DataLoader
+from model.yolov3 import *
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="YOLOV3_PYTORCH argments")
@@ -37,11 +39,23 @@ def train(cfg_param=None, using_gpus=None):
                               drop_last=True,
                               shuffle=True,
                               )
+    # for i, batch in enumerate(train_loader):
+    #     img, targets, anno_path = batch
+    #     print("iter {}, img {}, targets {}, anno_path {}".format(i, img.shape, targets.shape, anno_path))
+    #
+    #     tools.draw_box(img[0].detach().cpu())
+    model = DarkNet53(args.cfg, cfg_param, is_train=True)
+    for name, param in model.named_parameters():
+        print(f"name {name} param {param.shape}")
+    # training model
+    model.train()
     for i, batch in enumerate(train_loader):
         img, targets, anno_path = batch
-        print("iter {}, img {}, targets {}, anno_path {}".format(i, img.shape, targets.shape, anno_path))
 
-        tools.draw_box(img[0].detach().cpu())
+        output = model(img)
+        print("output len : {}, shape {} {} {}".format(len(output), output[0].shape, output[1].shape, output[2].shape))
+        sys.exit(1)
+
 
 def eval():
     print("eval")
@@ -58,11 +72,13 @@ if __name__ == "__main__":
 
     # cfg parser
     cfg_data = tools.parse_hyperparam_config(args.cfg)
-    cfg_info = tools.get_hyperparam(cfg_data)
+    cfg_param = tools.get_hyperparam(cfg_data)
+
+    print(cfg_data)
 
     if args.mode == "train":
 
-        train(cfg_param=cfg_info)
+        train(cfg_param=cfg_param)
 
     elif args.mode == "eval":
         eval()
