@@ -24,7 +24,24 @@ def parse_args():
         sys.exit(1)
     args = parser.parse_args()
     return args
+def collate_fn(batch):
+    batch = [data for data in batch if data is not None]
+    # skip invalid frames
+    if len(batch) == 0:
+        return
 
+    imgs, targets, anno_path = list(zip(*batch))
+
+    imgs = torch.stack([img for img in imgs])
+
+    if targets[0] is None or anno_path[0] is None:
+        return imgs, None, None
+
+    for i, boxes in enumerate(targets):
+        boxes[:, 0] = i
+    targets = torch.cat(targets, 0)
+
+    return imgs, targets, anno_path
 
 def train(cfg_param=None, using_gpus=None):
     print("train")
@@ -37,21 +54,34 @@ def train(cfg_param=None, using_gpus=None):
                               batch_size=cfg_param['batch'],
                               num_workers=0,
                               pin_memory=True,
-                              drop_last=True,
-                              shuffle=True,
+                              drop_last=False,
+                              shuffle=False,
+                              collate_fn=collate_fn
                               )
     # for i, batch in enumerate(train_loader):
     #     img, targets, anno_path = batch
     #     print("iter {}, img {}, targets {}, anno_path {}".format(i, img.shape, targets.shape, anno_path))
     #
     #     tools.draw_box(img[0].detach().cpu())
+
     model = DarkNet53(args.cfg, cfg_param, is_train=True)
     # training model
     model.train()
     model.initialize_weight()
 
-    trainer = Trainer(model=model, train_loader=train_loader, eval_loader=None, params=cfg_param)
+    # set device
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+        print("GPU")
+    else:
+        device = torch.device("cpu")
+        print("CPU")
+
+    model = model.to(device)
+
+    trainer = Trainer(model=model, train_loader=train_loader, eval_loader=None, params=cfg_param, device=device)
     trainer.run()
+
 
 def eval():
     print("eval")
@@ -69,8 +99,6 @@ if __name__ == "__main__":
     # cfg parser
     cfg_data = tools.parse_hyperparam_config(args.cfg)
     cfg_param = tools.get_hyperparam(cfg_data)
-
-    print(cfg_data)
 
     if args.mode == "train":
 

@@ -82,8 +82,8 @@ class DarkNet53(nn.Module):
         self.in_height = int(param['in_height'])
         self.n_classes = int(param['class'])
         self.module_cfg = parse_model_config(cfg)
-
         self.module_list = self.set_layer(self.module_cfg)
+        self.yolo_layers = [layer[0] for layer in self.module_list if isinstance(layer[0], YoloLayer)]
         self.training = is_train
 
     def set_layer(self, config):

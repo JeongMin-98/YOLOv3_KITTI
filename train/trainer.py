@@ -2,17 +2,20 @@ import os, sys
 import torch
 import torch.optim as optim
 
+from train.loss import YoloLoss
 from utils.tools import *
 
 
 class Trainer:
-    def __init__(self, model, train_loader, eval_loader, params):
+    def __init__(self, model, train_loader, eval_loader, params, device):
         self.model = model
         self.train_loader = train_loader
         self.eval_loader = eval_loader
         self.max_batch = params['max_batch']
+        self.device = device
         self.epoch = 0
         self.iter = 0
+        self.yolo_loss = YoloLoss(self.model.n_classes, self.device)
         self.optimizer = optim.SGD(model.parameters(),
                                    lr=params['lr'],
                                    momentum=params['momentum'],
@@ -30,7 +33,18 @@ class Trainer:
             if batch is None:
                 continue
             input_img, targets, anno_path = batch
-            print(input_img.shape, targets.shape)
+
+            input_img = input_img.to(self.device, non_blocking=True)
+
+            output = self.model(input_img)
+
+            # get loss between output and target
+            loss, loss_list = self.yolo_loss.compute_loss(output, targets, self.model.yolo_layers)
+
+            print(f"loss {loss} loss_list {loss_list[0]}")
+            print("output - len: {} shape : {}".format(len(output), output[0].shape))
+
+            sys.exit(1)
 
     def run(self):
         while True:

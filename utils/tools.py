@@ -1,9 +1,17 @@
 """
     강의 내용 참고하여 작성
 """
+import sys
+
+import torch
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image, ImageDraw, ImageFont
+
+
+def signal_handler(sig, frame):
+    print("Finished Programs")
+    sys.exit(1)
 
 
 def read_config(path):
@@ -128,6 +136,33 @@ def xywh2xyxy_np(x):
     y[..., 3] = x[..., 1] + x[..., 3] / 2  # maxy
 
     return y
+
+
+def bbox_iou(box1, box2, x1y1x2y2=False, device=None, eps=1e-9):
+    box2 = box2.T
+    if x1y1x2y2 is False:
+        box1_x1, box1_y1 = box1[0] - box1[2] / 2, box1[1] - box1[3] / 2
+        box1_x2, box1_y2 = box1[0] + box1[2] / 2, box1[1] + box1[3] / 2
+        box2_x1, box2_y1 = box2[0] - box2[2] / 2, box2[1] - box2[3] / 2
+        box2_x2, box2_y2 = box2[0] + box2[2] / 2, box2[1] + box2[3] / 2
+    else:
+        pass
+
+    # get intersection area
+    inter = (torch.min(box1_x2, box2_x2) - torch.max(box1_x1, box2_x1)).clamp(0) * \
+            (torch.min(box1_y2, box2_y2) - torch.max(box1_y1, box2_y1)).clamp(0)
+
+    # get each box area
+    w1, h1 = box1_x2 - box1_x1, box1_y2 - box1_y1 + eps
+    w2, h2 = box2_x2 - box2_x1, box2_y2 - box2_y1 + eps
+    a_area = w1 * h1
+    b_area = w2 * h2
+
+    union = a_area + b_area - inter + eps
+
+    areas = inter / union
+
+    return areas
 
 
 def draw_box(img):
