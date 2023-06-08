@@ -9,6 +9,8 @@ from model.yolov3 import *
 from train.trainer import Trainer
 from tensorboardX import SummaryWriter
 
+from tensorboardX import SummaryWriter
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="YOLOV3_PYTORCH argments")
@@ -79,6 +81,16 @@ def train(cfg_param=None, using_gpus=None):
 
     model = model.to(device)
 
+
+
+    if args.checkpoint is not None:
+        print("load pretrained model", args.checkpoint)
+        checkpoint = torch.load(args.checkpoint, map_location= device)
+        print(checkpoint)
+
+
+
+    torch_writer = SummaryWriter('./output')
     trainer = Trainer(model=model, train_loader=train_loader, eval_loader=None, params=cfg_param, device=device, torch_writer=torch_writer)
     trainer.run()
 

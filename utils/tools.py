@@ -118,6 +118,27 @@ def get_hyperparam(cfg):
             continue
 
 
+def cxcy2minmax(box):
+    output = box.new(box.shape)
+
+    xmin = box[..., 0] - box[..., 2] / 2
+    ymin = box[..., 1] - box[..., 3] / 2
+    xmax = box[..., 0] + box[..., 2] / 2
+    ymax = box[..., 1] + box[..., 3] / 2
+
+    output[..., 0] = xmin
+    output[..., 1] = ymin
+    output[..., 2] = xmax
+    output[..., 3] = ymax
+
+    return output
+
+def nms(prediction, conf_threshold=0.25, iou_threshold=0.45, classes=None):
+    """
+        prediction => box
+
+    """
+
 def xywh2xyxy_np(x):
     """
     Input value
