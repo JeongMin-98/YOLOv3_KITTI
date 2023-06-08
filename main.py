@@ -7,6 +7,7 @@ from dataloader.data_transforms import get_transformations
 from torch.utils.data.dataloader import DataLoader
 from model.yolov3 import *
 from train.trainer import Trainer
+from tensorboardX import SummaryWriter
 
 
 def parse_args():
@@ -24,6 +25,8 @@ def parse_args():
         sys.exit(1)
     args = parser.parse_args()
     return args
+
+
 def collate_fn(batch):
     batch = [data for data in batch if data is not None]
     # skip invalid frames
@@ -43,6 +46,7 @@ def collate_fn(batch):
 
     return imgs, targets, anno_path
 
+
 def train(cfg_param=None, using_gpus=None):
     print("train")
     my_transform = get_transformations(cfg_param=cfg_param, is_train=True)
@@ -58,11 +62,7 @@ def train(cfg_param=None, using_gpus=None):
                               shuffle=False,
                               collate_fn=collate_fn
                               )
-    # for i, batch in enumerate(train_loader):
-    #     img, targets, anno_path = batch
-    #     print("iter {}, img {}, targets {}, anno_path {}".format(i, img.shape, targets.shape, anno_path))
-    #
-    #     tools.draw_box(img[0].detach().cpu())
+    torch_writer = SummaryWriter("./output")
 
     model = DarkNet53(args.cfg, cfg_param, is_train=True)
     # training model
@@ -79,7 +79,7 @@ def train(cfg_param=None, using_gpus=None):
 
     model = model.to(device)
 
-    trainer = Trainer(model=model, train_loader=train_loader, eval_loader=None, params=cfg_param, device=device)
+    trainer = Trainer(model=model, train_loader=train_loader, eval_loader=None, params=cfg_param, device=device, torch_writer=torch_writer)
     trainer.run()
 
 

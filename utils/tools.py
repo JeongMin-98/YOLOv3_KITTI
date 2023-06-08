@@ -165,6 +165,11 @@ def bbox_iou(box1, box2, x1y1x2y2=False, device=None, eps=1e-9):
     return areas
 
 
+def get_lr(optimizer):
+    for param_group in optimizer.param_groups:
+        return param_group['lr']
+
+
 def draw_box(img):
     img = img * 255
 

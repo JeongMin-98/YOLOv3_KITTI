@@ -7,12 +7,13 @@ from utils.tools import *
 
 
 class Trainer:
-    def __init__(self, model, train_loader, eval_loader, params, device):
+    def __init__(self, model, train_loader, eval_loader, params, device, torch_writer):
         self.model = model
         self.train_loader = train_loader
         self.eval_loader = eval_loader
         self.max_batch = params['max_batch']
         self.device = device
+        self.torch_writer = torch_writer
         self.epoch = 0
         self.iter = 0
         self.yolo_loss = YoloLoss(self.model.n_classes, self.device)
@@ -41,23 +42,32 @@ class Trainer:
             # get loss between output and target
             loss, loss_list = self.yolo_loss.compute_loss(output, targets, self.model.yolo_layers)
 
-            print(f"loss {loss} loss_list {loss_list[0]}")
-            print("output - len: {} shape : {}".format(len(output), output[0].shape))
+            loss.backward()
+            self.optimizer.step()
+            self.optimizer.zero_grad()
+            self.iter += 1
 
-            sys.exit(1)
+            if i % 100 == 0:
+                print("epoch {} / iter {} lr {:.5f}, loss {:.5f}".format(self.epoch, self.iter, get_lr(self.optimizer)))
+                self.torch_writer.add_scalar("lr", get_lr(self.optimizer), self.iter)
+                self.torch_writer.add_scalar("total_loss", loss, self.iter)
+                loss_name = ['total_loss', 'obj_loss', 'cls_loss', 'box_lss']
+                for ln, ls in zip(loss_name, loss_list):
+                    self.torch_writer.add_scalar(ln, ls, self.iter)
+        return loss
 
     def run(self):
         while True:
             self.model.train()
             # loss calculation
-            self.run_iter()
+            loss = self.run_iter()
             self.epoch += 1
-            # if self.epoch % 50 == 0:
-            #     checkpoint_path = os.path.join("./output", "model_epoch" + str(self.epoch) + ".pth")
-            #     torch.save({
-            #         'epoch': self.epoch,
-            #         'iteration': self.iter,
-            #         'model_state_dict': self.model.state_dict(),
-            #         'optimizer_state_dict': self.optimizer.state_dict(),
-            #         'loss': loss
-            #     }, checkpoint_path)
+            if self.epoch % 1 == 0:
+                checkpoint_path = os.path.join("./output", "model_epoch" + str(self.epoch) + ".pth")
+                torch.save({
+                    'epoch': self.epoch,
+                    'iteration': self.iter,
+                    'model_state_dict': self.model.state_dict(),
+                    'optimizer_state_dict': self.optimizer.state_dict(),
+                    'loss': loss
+                }, checkpoint_path)
