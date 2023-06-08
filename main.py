@@ -7,6 +7,7 @@ from dataloader.data_transforms import get_transformations
 from torch.utils.data.dataloader import DataLoader
 from model.yolov3 import *
 from train.trainer import Trainer
+from tensorboardX import SummaryWriter
 
 from tensorboardX import SummaryWriter
 
@@ -63,11 +64,7 @@ def train(cfg_param=None, using_gpus=None):
                               shuffle=False,
                               collate_fn=collate_fn
                               )
-    # for i, batch in enumerate(train_loader):
-    #     img, targets, anno_path = batch
-    #     print("iter {}, img {}, targets {}, anno_path {}".format(i, img.shape, targets.shape, anno_path))
-    #
-    #     tools.draw_box(img[0].detach().cpu())
+    torch_writer = SummaryWriter("./output")
 
     model = DarkNet53(args.cfg, cfg_param, is_train=True)
     # training model
@@ -84,12 +81,13 @@ def train(cfg_param=None, using_gpus=None):
 
     model = model.to(device)
 
+
+
     if args.checkpoint is not None:
         print("load pretrained model", args.checkpoint)
         checkpoint = torch.load(args.checkpoint, map_location= device)
         print(checkpoint)
 
-    sys.exit(1)
 
 
     torch_writer = SummaryWriter('./output')

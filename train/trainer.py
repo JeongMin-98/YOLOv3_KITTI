@@ -7,6 +7,7 @@ from utils.tools import *
 
 
 class Trainer:
+
     def __init__(self, model, train_loader, eval_loader, params, device, torch_writer, checkpoint=None):
         self.model = model
         self.train_loader = train_loader
@@ -49,6 +50,7 @@ class Trainer:
             loss.backward()
             self.optimizer.step()
             self.optimizer.zero_grad()
+
             self.scheduler_multistep.step(self.iter)
             self.iter += 1
 
@@ -100,7 +102,8 @@ class Trainer:
             # loss calculation
             loss = self.run_iter()
             self.epoch += 1
-            if self.epoch % 50 == 0:
+
+            if self.epoch % 1 == 0:
                 checkpoint_path = os.path.join("./output", "model_epoch" + str(self.epoch) + ".pth")
                 torch.save({
                     'epoch': self.epoch,
