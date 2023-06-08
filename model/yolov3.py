@@ -55,7 +55,6 @@ class YoloLayer(nn.Module):
     # x is input. [N, C, H, W]
     def forward(self, x):
 
-        print(x.shape)
         self.lw = x.shape[3]
         self.lh = x.shape[2]
         self.anchor = self.anchor.to(x.device)

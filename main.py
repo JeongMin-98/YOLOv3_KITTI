@@ -8,6 +8,8 @@ from torch.utils.data.dataloader import DataLoader
 from model.yolov3 import *
 from train.trainer import Trainer
 
+from tensorboardX import SummaryWriter
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="YOLOV3_PYTORCH argments")
@@ -24,6 +26,8 @@ def parse_args():
         sys.exit(1)
     args = parser.parse_args()
     return args
+
+
 def collate_fn(batch):
     batch = [data for data in batch if data is not None]
     # skip invalid frames
@@ -42,6 +46,7 @@ def collate_fn(batch):
     targets = torch.cat(targets, 0)
 
     return imgs, targets, anno_path
+
 
 def train(cfg_param=None, using_gpus=None):
     print("train")
@@ -79,7 +84,16 @@ def train(cfg_param=None, using_gpus=None):
 
     model = model.to(device)
 
-    trainer = Trainer(model=model, train_loader=train_loader, eval_loader=None, params=cfg_param, device=device)
+    if args.checkpoint is not None:
+        print("load pretrained model", args.checkpoint)
+        checkpoint = torch.load(args.checkpoint, map_location= device)
+        print(checkpoint)
+
+    sys.exit(1)
+
+
+    torch_writer = SummaryWriter('./output')
+    trainer = Trainer(model=model, train_loader=train_loader, eval_loader=None, params=cfg_param, device=device, torch_writer=torch_writer)
     trainer.run()
 
 

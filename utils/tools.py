@@ -118,6 +118,27 @@ def get_hyperparam(cfg):
             continue
 
 
+def cxcy2minmax(box):
+    output = box.new(box.shape)
+
+    xmin = box[..., 0] - box[..., 2] / 2
+    ymin = box[..., 1] - box[..., 3] / 2
+    xmax = box[..., 0] + box[..., 2] / 2
+    ymax = box[..., 1] + box[..., 3] / 2
+
+    output[..., 0] = xmin
+    output[..., 1] = ymin
+    output[..., 2] = xmax
+    output[..., 3] = ymax
+
+    return output
+
+def nms(prediction, conf_threshold=0.25, iou_threshold=0.45, classes=None):
+    """
+        prediction => box
+
+    """
+
 def xywh2xyxy_np(x):
     """
     Input value
@@ -163,6 +184,11 @@ def bbox_iou(box1, box2, x1y1x2y2=False, device=None, eps=1e-9):
     areas = inter / union
 
     return areas
+
+
+def get_lr(optimizer):
+    for param_group in optimizer.param_groups:
+        return param_group['lr']
 
 
 def draw_box(img):
